@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import random
+import hashlib
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -25,9 +26,9 @@ except ImportError:
 
 # Application Initialization
 app = FastAPI(
-    title="Fonaurixis Phoenix Fire Bot v16.6.6 Pro Gen 20 Core",
-    description="The Ultimate Multi-Market Automated Trading System & Mobile PWA Command Center",
-    version="16.6.6-Gen20-Core"
+    title="Fonaurixis Phoenix Fire Bot v16.6.6 Pro Gen 20 Core Ultimate",
+    description="The Ultimate Multi-Market Automated Trading System, Gateway Firewall & Referral Command Center",
+    version="16.6.6-Gen20-Core-Ultimate"
 )
 
 # Enable CORS for Cross-Platform Mobile PWA Access (Android & iPhone)
@@ -71,12 +72,18 @@ class BotSwitchData(BaseModel):
     user_id: str
     auto_trade_active: bool
 
-# Encryption Helpers
+# Encryption & Referral Code Helpers
 def encrypt_credential(plain_text: str) -> str:
     return cipher_suite.encrypt(plain_text.encode()).decode()
 
 def decrypt_credential(cipher_text: str) -> str:
     return cipher_suite.decrypt(cipher_text.encode()).decode()
+
+def generate_ref_code(user_key: str) -> str:
+    """Generates a unique 6-character referral code derived from user identity."""
+    clean_key = user_key.lower().replace(" ", "")
+    hash_digest = hashlib.md5(clean_key.encode()).hexdigest().upper()
+    return f"PHX-{hash_digest[:6]}"
 
 def execute_phoenix_trade(symbol: str, order_type: str, account_balance: float = 5.0, account_type: str = "Demo"):
     # Gen 20 Core Dynamic Lot Scaler Logic
@@ -124,7 +131,7 @@ def execute_phoenix_trade(symbol: str, order_type: str, account_balance: float =
 async def run_phoenix_fire_engine():
     logger.info("⚡ Fonaurixis Gen 20 Core Hybrid Engine active...")
     universal_markets = [
-        "BTCUSD", "ETHUSD", "SOLUSD",          # Cryptocurrencies (Bitcoin Primary)
+        "BTCUSD", "ETHUSD", "SOLUSD",          # Cryptocurrencies
         "XAUUSD (Gold)", "EURUSD", "GBPUSD",   # Gold & Forex Majors
         "Volatility 100 Index", "Volatility 75 Index" # Synthetics
     ]
@@ -153,9 +160,9 @@ async def run_phoenix_fire_engine():
 async def startup_event():
     asyncio.create_task(run_phoenix_fire_engine())
 
-# Dashboard Web Interface (v16.6.6 Pro Gen 20 Core)
+# Dashboard Web Interface (v16.6.6 Pro Gen 20 Core Ultimate with Firewall & Referral Hub)
 @app.get("/", response_class=HTMLResponse)
-async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] = None):
+async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, user: Optional[str] = None, ref: Optional[str] = None):
     is_admin = (admin == ADMIN_CHAT_ID)
     
     if is_admin and ADMIN_CHAT_ID not in user_sessions:
@@ -166,16 +173,117 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
             "auto_trade_active": True,
             "simulated_balance": 5.0,
             "tier_level": "APEX CREATOR",
-            "referrals": 999
+            "referrals": 999,
+            "ref_code": generate_ref_code(ADMIN_CHAT_ID)
         }
     
-    current_user_key = admin if is_admin else (user if user else "Guest User")
-    current_username = "Falcon (Apex Creator)" if is_admin else (user if user else "Guest User")
+    # Check if a valid user session exists
+    authenticated_user = admin if is_admin else (user if user and user in user_sessions else None)
+    
+    if ref:
+        logger.info(f"New user arrived via referral code: {ref}")
+
+    # FIREWALL GATEKEEPER WALL (Blocks unauthenticated access)
+    if not authenticated_user:
+        return f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <title>Subscriber Firewall - Phoenix Gen 20 Core</title>
+            <style>
+                * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
+                body {{ background-color: #030508; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }}
+                .login-wrapper {{ width: 100%; max-width: 420px; background: linear-gradient(145deg, #0d1322, #080c16); border-radius: 20px; padding: 24px; border: 1px solid rgba(249, 115, 22, 0.3); box-shadow: 0 12px 40px rgba(0,0,0,0.8); position: relative; overflow: hidden; }}
+                .login-wrapper::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #f97316, #3b82f6, #ec4899, #4ade80); }}
+                .brand-title {{ font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 6px; background: linear-gradient(135deg, #ff416c, #f59e0b, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }}
+                .subtitle {{ font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 20px; }}
+                .input-box {{ width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: #05070c; color: white; font-size: 14px; outline: none; }}
+                .btn-fire {{ background: linear-gradient(135deg, #f97316, #ef4444, #db2777); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; width: 100%; cursor: pointer; margin-top: 12px; text-align: center; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4); }}
+                .btn-dark {{ background: #1e293b; color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.1); padding: 13px; border-radius: 12px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; margin-top: 10px; }}
+                .divider {{ text-align: center; margin: 16px 0; color: #64748b; font-size: 11px; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class="login-wrapper">
+                <div class="brand-title">🔥 Phoenix Gen 20 Core</div>
+                <div class="subtitle">🔒 Firewall Gateway: Authentication Required</div>
+
+                <!-- Google OAuth Sign-In Button -->
+                <button class="btn-fire" style="background: #ffffff; color: #1f2937; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; border: 1px solid #d1d5db;" onclick="googleSignIn()">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.87z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.16 21.32 7.22 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.19C.43 8.14 0 9.87 0 11.75s.43 3.61 1.19 5.14l4.08-2.65z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.16 2.68 1.19 6.61l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+                    Sign In with Google
+                </button>
+
+                <div class="divider">OR MEMBER LOGIN</div>
+
+                <input type="email" id="auth_email" class="input-box" placeholder="Subscriber Email">
+                <input type="password" id="auth_pass" class="input-box" placeholder="Password">
+                <button class="btn-fire" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="userLogin()">Log In to Board</button>
+                
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0;">
+                <p style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Master Owner Bypass:</p>
+                <input type="password" id="admin_key" class="input-box" placeholder="Enter Owner Telegram ID">
+                <button class="btn-dark" onclick="unlockAdmin()">Master Owner Bypass</button>
+            </div>
+
+            <script>
+                function googleSignIn() {{
+                    const mockEmail = "subscriber.gen20@gmail.com";
+                    fetch('/api/v1/auth/signin', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }},
+                        body: JSON.stringify({{ email: mockEmail, password: "google_oauth_token" }})
+                    }})
+                    .then(res => res.json())
+                    .then(data => {{
+                        window.location.href = '/?user=' + encodeURIComponent(data.email);
+                    }});
+                }}
+
+                function userLogin() {{
+                    const email = document.getElementById('auth_email').value;
+                    const pass = document.getElementById('auth_pass').value;
+                    if(!email || !pass) {{ alert('Enter email and password.'); return; }}
+                    fetch('/api/v1/auth/signin', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }},
+                        body: JSON.stringify({{ email: email, password: pass }})
+                    }})
+                    .then(res => res.json())
+                    .then(data => {{
+                        window.location.href = '/?user=' + encodeURIComponent(data.email);
+                    }});
+                }}
+
+                function unlockAdmin() {{
+                    const val = document.getElementById('admin_key').value;
+                    if(val === '{ADMIN_CHAT_ID}') {{
+                        window.location.href = '/?admin=' + val;
+                    }} else {{
+                        alert('Incorrect Owner Key.');
+                    }}
+                }}
+            </script>
+        </body>
+        </html>
+        """
+
+    # Authenticated User Environment
+    current_user_key = admin if is_admin else authenticated_user
+    current_username = "Falcon (Apex Creator)" if is_admin else authenticated_user
     
     user_data = user_sessions.get(current_user_key, {})
     user_auto_status = user_data.get("auto_trade_active", True if is_admin else False)
     user_tier = user_data.get("tier_level", "V1 Phoenix Novice")
     user_referrals = user_data.get("referrals", 0)
+    user_ref_code = user_data.get("ref_code", generate_ref_code(current_user_key))
+
+    base_url = str(request.base_url).rstrip("/")
+    shareable_ref_link = f"{base_url}/?ref={user_ref_code}"
 
     return f"""
     <!DOCTYPE html>
@@ -239,9 +347,7 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
             <div class="brand">🔥 Phoenix Gen 20 Core</div>
             <div class="top-actions">
                 <span onclick="alert('System Online')" style="cursor:pointer;">🌐 Global</span>
-                <span onclick="alert('Gen 20 Core Active')" style="cursor:pointer;">📢<span class="badge-count">9+</span></span>
-                <span onclick="alert('Notifications Active')" style="cursor:pointer;">🔔<span class="badge-count">9+</span></span>
-                <span onclick="alert('Support: @{ADMIN_CHAT_ID}')" style="cursor:pointer;">🎧</span>
+                <span onclick="logoutUser()" style="cursor:pointer; color: #f87171;">🚪 Logout</span>
             </div>
         </div>
 
@@ -254,7 +360,7 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
                 {"<div class='card' style='border:1px solid #ef4444; background: linear-gradient(135deg, #1e0909, #3f0909);'><div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#fca5a5; font-weight:900;'>👑 APEX CREATOR COMMAND (GEN 20 CORE)</span><span style='color:#4ade80; font-size:12px; font-weight:bold;'>MASTER ACCESS 🟢</span></div><h2 style='margin:6px 0; color:white;'>Falcon ⚡</h2><p style='font-size:12px; color:#fecdd3;'>Gen 20 Core active: Dynamic 0.01-to-Compound scaling enabled across global markets.</p></div>" if is_admin else ""}
 
                 <!-- Subscriber Status Header -->
-                {"<div class='card' style='border: 1px solid #3b82f6;'><div style='display:flex; justify-content:space-between; align-items:center;'><span style='font-size:12px; color:#93c5fd; font-weight:800;'>SUBSCRIBER TIER RANK</span><span style='background:#1e3a8a; color:#93c5fd; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>" + str(user_tier) + "</span></div><div style='margin-top:6px; font-size:13px; color:#cbd5e1;'>Referrals: <strong>" + str(user_referrals) + " / 50</strong> (Advance to next tier)</div></div>" if not is_admin else ""}
+                {"<div class='card' style='border: 1px solid #3b82f6;'><div style='display:flex; justify-content:space-between; align-items:center;'><span style='font-size:12px; color:#93c5fd; font-weight:800;'>SUBSCRIBER TIER RANK</span><span style='background:#1e3a8a; color:#93c5fd; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>" + str(user_tier) + "</span></div><div style='margin-top:6px; font-size:13px; color:#cbd5e1;'>Active Referrals: <strong>" + str(user_referrals) + " / 50</strong> (Advance to next tier)</div></div>" if not is_admin else ""}
 
                 <!-- Master Auto-Trading Switch -->
                 <div class="card" style="border: 1px solid #f97316;">
@@ -326,40 +432,34 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
                 </div>
             </div>
 
-            <!-- TAB 5: PROFILE & API BINDING -->
+            <!-- TAB 5: PROFILE, REFERRAL ENGINE & API BINDING -->
             <div id="tab-profile" class="tab-page">
                 <div class="card">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 22px;">👤</div>
                         <div>
                             <div style="font-size: 18px; font-weight: 800; color: white;">{current_username} 👑</div>
-                            <div style="font-size: 12px; color: #94a3b8;">Telegram ID: {ADMIN_CHAT_ID}</div>
+                            <div style="font-size: 12px; color: #94a3b8;">User Key: {current_user_key}</div>
                             <div style="font-size: 12px; color: #4ade80; margin-top: 4px;">Tier: <strong>{user_tier}</strong></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Subscriber Portal Sign-In Section -->
-                <div class="card">
-                    <h4 style="margin-bottom: 8px; color: #f8fafc;">Subscriber Portal Access</h4>
-                    <p style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Sign in with Google or your member credentials to load your account.</p>
+                <!-- 🔥 UNIQUE SUBSCRIBER REFERRAL SYSTEM CARD 🔥 -->
+                <div class="card" style="border: 1px solid #ec4899; background: linear-gradient(145deg, #15091d, #080c16);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size: 14px; font-weight: 800; color: #f472b6;">🎁 Your Subscriber Referral Hub</span>
+                        <span style="background: #831843; color: #fbcfe8; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px;">EARN V1-V5 RANKS</span>
+                    </div>
+                    <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px;">Share your link on WhatsApp/Telegram. When new members join through your link, your rank advances automatically!</p>
                     
-                    <!-- Google OAuth Sign-In Button -->
-                    <button class="btn-fire" style="background: #ffffff; color: #1f2937; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; border: 1px solid #d1d5db;" onclick="googleSignIn()">
-                        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.87z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.16 21.32 7.22 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.19C.43 8.14 0 9.87 0 11.75s.43 3.61 1.19 5.14l4.08-2.65z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.16 2.68 1.19 6.61l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
-                        Sign In with Google
-                    </button>
+                    <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">YOUR REFERRAL CODE:</label>
+                    <input type="text" class="input-box" value="{user_ref_code}" readonly style="font-weight: 800; letter-spacing: 1px; color: #facc15; border-color: rgba(250, 204, 21, 0.3);">
 
-                    <div style="text-align: center; margin: 12px 0; color: #64748b; font-size: 11px; font-weight: bold;">OR MEMBER LOGIN</div>
+                    <label style="font-size: 11px; color: #94a3b8; font-weight: bold; margin-top: 6px; display: block;">YOUR PERSONAL INVITATION LINK:</label>
+                    <input type="text" id="user_invite_link" class="input-box" value="{shareable_ref_link}" readonly style="font-size: 12px; color: #38bdf8;">
 
-                    <input type="email" id="auth_email" class="input-box" placeholder="Subscriber Email">
-                    <input type="password" id="auth_pass" class="input-box" placeholder="Password">
-                    <button class="btn-fire" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="userLogin()">Log In to Dashboard</button>
-                    
-                    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:14px 0;">
-                    <p style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Master Owner Bypass:</p>
-                    <input type="password" id="admin_key" class="input-box" placeholder="Enter Admin Telegram ID ({ADMIN_CHAT_ID})">
-                    <button class="btn-dark" onclick="unlockAdmin()">Master Owner Bypass</button>
+                    <button class="btn-fire" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);" onclick="copyReferralLink()">📋 Copy Invite Link</button>
                 </div>
 
                 <div class="card">
@@ -403,43 +503,16 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
                 window.scrollTo(0, 0);
             }}
 
-            function googleSignIn() {{
-                const mockEmail = "subscriber.gen20@gmail.com";
-                fetch('/api/v1/auth/signin', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ email: mockEmail, password: "google_oauth_token" }})
-                }})
-                .then(res => res.json())
-                .then(data => {{
-                    alert('Google Sign-In Successful! Welcome ' + data.email);
-                    window.location.href = '/?user=' + encodeURIComponent(data.email);
-                }});
+            function logoutUser() {{
+                window.location.href = '/';
             }}
 
-            function userLogin() {{
-                const email = document.getElementById('auth_email').value;
-                const pass = document.getElementById('auth_pass').value;
-                if(!email || !pass) {{ alert('Enter email and password.'); return; }}
-                fetch('/api/v1/auth/signin', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ email: email, password: pass }})
-                }})
-                .then(res => res.json())
-                .then(data => {{
-                    alert('Login successful!');
-                    window.location.href = '/?user=' + encodeURIComponent(data.email);
-                }});
-            }}
-
-            function unlockAdmin() {{
-                const val = document.getElementById('admin_key').value;
-                if(val === '{ADMIN_CHAT_ID}') {{
-                    window.location.href = '/?admin=' + val;
-                }} else {{
-                    alert('Incorrect Owner Key.');
-                }}
+            function copyReferralLink() {{
+                const inviteInput = document.getElementById('user_invite_link');
+                inviteInput.select();
+                inviteInput.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(inviteInput.value);
+                alert('Referral Link Copied to Clipboard!');
             }}
 
             function toggleAutoTrade(userKey) {{
@@ -470,7 +543,7 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
 
             function submitPayment(method) {{
                 const txid = document.getElementById('airtel_txid').value;
-                const userKey = new URLSearchParams(window.location.search).get('user') || 'guest_user';
+                const userKey = "{current_user_key}";
                 if(!txid) {{ alert('Paste your transaction reference ID.'); return; }}
                 fetch('/api/v1/payments/submit', {{
                     method: 'POST',
@@ -509,7 +582,16 @@ async def serve_pwa_dashboard(admin: Optional[str] = None, user: Optional[str] =
 @app.post("/api/v1/auth/signin")
 async def auth_signin(data: UserAuthData):
     if data.email not in user_sessions:
-        user_sessions[data.email] = {"email": data.email, "status": "active", "mt5_bound": False, "auto_trade_active": True, "simulated_balance": 5.0, "tier_level": "V1 Phoenix Novice", "referrals": 0}
+        user_sessions[data.email] = {
+            "email": data.email, 
+            "status": "active", 
+            "mt5_bound": False, 
+            "auto_trade_active": True, 
+            "simulated_balance": 5.0, 
+            "tier_level": "V1 Phoenix Novice", 
+            "referrals": 0,
+            "ref_code": generate_ref_code(data.email)
+        }
     else:
         user_sessions[data.email]["status"] = "active"
     return {"status": "success", "email": data.email}
@@ -517,7 +599,7 @@ async def auth_signin(data: UserAuthData):
 @app.post("/api/v1/bot/toggle")
 async def toggle_bot(data: BotSwitchData):
     if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"status": "active", "mt5_bound": False, "simulated_balance": 5.0}
+        user_sessions[data.user_id] = {"status": "active", "mt5_bound": False, "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
     user_sessions[data.user_id]["auto_trade_active"] = data.auto_trade_active
     state_msg = "activated (Gen 20 Core Hybrid ON)" if data.auto_trade_active else "paused (Gen 20 Core OFF)"
     return {"status": "success", "message": f"Phoenix Gen 20 Core Bot has been {state_msg}!"}
@@ -526,7 +608,7 @@ async def toggle_bot(data: BotSwitchData):
 async def bind_mt5(data: MT5BindingData):
     encrypted_pw = encrypt_credential(data.password)
     if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"status": "active", "simulated_balance": 5.0}
+        user_sessions[data.user_id] = {"status": "active", "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
     user_sessions[data.user_id].update({
         "account_id": data.account_id,
         "password_hash": encrypted_pw,
@@ -539,8 +621,9 @@ async def bind_mt5(data: MT5BindingData):
 @app.post("/api/v1/payments/submit")
 async def submit_payment(data: PaymentSubmissionData):
     if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"mt5_bound": False, "simulated_balance": 5.0}
+        user_sessions[data.user_id] = {"mt5_bound": False, "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
     user_sessions[data.user_id]["status"] = "active"
     return {"status": "success", "message": "Payment recorded and sent for verification."}
+
 
 
