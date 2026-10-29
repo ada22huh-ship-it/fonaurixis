@@ -4,8 +4,8 @@ import logging
 import random
 import hashlib
 from typing import Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from cryptography.fernet import Fernet
@@ -24,14 +24,12 @@ except ImportError:
     MT5_AVAILABLE = False
     logger.warning("MetaTrader 5 not available in Linux host. Running in Phoenix Gen 20 Cloud Hybrid Engine mode.")
 
-# Application Initialization
 app = FastAPI(
     title="Fonaurixis Phoenix Fire Bot v16.6.6 Pro Gen 20 Core Ultimate",
     description="The Ultimate Multi-Market Automated Trading System, Gateway Firewall & Referral Command Center",
     version="16.6.6-Gen20-Core-Ultimate"
 )
 
-# Enable CORS for Cross-Platform Mobile PWA Access (Android & iPhone)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,13 +42,11 @@ app.add_middleware(
 ENCRYPTION_KEY = Fernet.generate_key()
 cipher_suite = Fernet(ENCRYPTION_KEY)
 
-# Session Storage & Master Settings
 user_sessions: Dict[str, Dict[str, Any]] = {}
 ADMIN_CHAT_ID = "8668083605"
 AIRTEL_NUMBER = "0731552385"
 AIRTEL_NAME = "Nantongo Rebecca"
 
-# Request Data Models
 class UserAuthData(BaseModel):
     email: str
     password: str
@@ -60,11 +56,11 @@ class MT5BindingData(BaseModel):
     account_id: str
     password: str
     server: str
-    account_type: str  # "Demo" or "Real"
+    account_type: str
 
 class PaymentSubmissionData(BaseModel):
     user_id: str
-    method: str  # "Airtel" or "Crypto"
+    method: str
     transaction_id: str
     amount: float
 
@@ -72,33 +68,28 @@ class BotSwitchData(BaseModel):
     user_id: str
     auto_trade_active: bool
 
-# Encryption & Referral Code Helpers
 def encrypt_credential(plain_text: str) -> str:
     return cipher_suite.encrypt(plain_text.encode()).decode()
 
-def decrypt_credential(cipher_text: str) -> str:
-    return cipher_suite.decrypt(cipher_text.encode()).decode()
-
 def generate_ref_code(user_key: str) -> str:
-    """Generates a unique 6-character referral code derived from user identity."""
     clean_key = user_key.lower().replace(" ", "")
     hash_digest = hashlib.md5(clean_key.encode()).hexdigest().upper()
     return f"PHX-{hash_digest[:6]}"
 
 def execute_phoenix_trade(symbol: str, order_type: str, account_balance: float = 5.0, account_type: str = "Demo"):
-    # Gen 20 Core Dynamic Lot Scaler Logic
+    # STRICT GEN 20 CORE DYNAMIC LOT SCALER & $5 MICRO SAFETY FLOOR ($0.01 LOT)
     if account_balance < 20.0:
-        dynamic_volume = 0.01  # Strict safety floor for micro accounts ($5 - $20)
+        dynamic_volume = 0.01  
     elif account_balance < 100.0:
-        dynamic_volume = 0.03  # First growth compounding tier
+        dynamic_volume = 0.03  
     elif account_balance < 500.0:
-        dynamic_volume = 0.20  # Mid-tier expansion
+        dynamic_volume = 0.20  
     elif account_balance < 2000.0:
-        dynamic_volume = 0.50  # Pro scaling tier
+        dynamic_volume = 0.50  
     elif account_balance < 10000.0:
-        dynamic_volume = 1.00  # High-balance compounding
+        dynamic_volume = 1.00  
     else:
-        dynamic_volume = 3.00  # Apex scaling for massive accounts
+        dynamic_volume = 3.00  
 
     if not MT5_AVAILABLE or mt5 is None:
         logger.info(f"🔥 [Gen 20 Core Engine] Executed {order_type} on {symbol} | Volume: {dynamic_volume} Lot [Balance: ${account_balance:.2f}] ({account_type})")
@@ -127,18 +118,16 @@ def execute_phoenix_trade(symbol: str, order_type: str, account_balance: float =
     result = mt5.order_send(request)
     return result and result.retcode == mt5.TRADE_RETCODE_DONE
 
-# Background Execution Engine Task
 async def run_phoenix_fire_engine():
     logger.info("⚡ Fonaurixis Gen 20 Core Hybrid Engine active...")
     universal_markets = [
-        "BTCUSD", "ETHUSD", "SOLUSD",          # Cryptocurrencies
-        "XAUUSD (Gold)", "EURUSD", "GBPUSD",   # Gold & Forex Majors
-        "Volatility 100 Index", "Volatility 75 Index" # Synthetics
+        "BTCUSD", "ETHUSD", "SOLUSD",          
+        "XAUUSD (Gold)", "EURUSD", "GBPUSD",   
+        "Volatility 100 Index", "Volatility 75 Index"
     ]
     while True:
         try:
             active_traders = [uid for uid, data in user_sessions.items() if data.get("auto_trade_active", False) or data.get("is_owner", False)]
-            
             if active_traders:
                 selected_symbol = random.choice(universal_markets)
                 signal = random.choice(["BUY", "SELL"])
@@ -147,10 +136,7 @@ async def run_phoenix_fire_engine():
                     simulated_balance = user_sessions[uid].get("simulated_balance", 5.0)
                     
                     execute_phoenix_trade(symbol=selected_symbol, order_type=signal, account_balance=simulated_balance, account_type=acc_type)
-                    
-                    # Simulating compounding growth
                     user_sessions[uid]["simulated_balance"] = simulated_balance + 2.50
-            
             await asyncio.sleep(2.5)
         except Exception as e:
             logger.error(f"Gen 20 Engine Loop Error: {e}")
@@ -160,30 +146,22 @@ async def run_phoenix_fire_engine():
 async def startup_event():
     asyncio.create_task(run_phoenix_fire_engine())
 
-# Dashboard Web Interface (v16.6.6 Pro Gen 20 Core Ultimate with Firewall & Referral Hub)
 @app.get("/", response_class=HTMLResponse)
 async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, user: Optional[str] = None, ref: Optional[str] = None):
     is_admin = (admin == ADMIN_CHAT_ID)
     
     if is_admin and ADMIN_CHAT_ID not in user_sessions:
         user_sessions[ADMIN_CHAT_ID] = {
-            "email": "falcon@owner.admin",
-            "status": "active",
-            "is_owner": True,
-            "auto_trade_active": True,
-            "simulated_balance": 5.0,
-            "tier_level": "APEX CREATOR",
-            "referrals": 999,
-            "ref_code": generate_ref_code(ADMIN_CHAT_ID)
+            "email": "falcon@owner.admin", "status": "active", "is_owner": True,
+            "auto_trade_active": True, "simulated_balance": 5.0, "tier_level": "APEX CREATOR",
+            "referrals": 999, "ref_code": generate_ref_code(ADMIN_CHAT_ID)
         }
     
-    # Check if a valid user session exists
     authenticated_user = admin if is_admin else (user if user and user in user_sessions else None)
-    
     if ref:
         logger.info(f"New user arrived via referral code: {ref}")
 
-    # FIREWALL GATEKEEPER WALL (Blocks unauthenticated access)
+    # FIREWALL GATEKEEPER WALL (Strict Privacy Lock)
     if not authenticated_user:
         return f"""
         <!DOCTYPE html>
@@ -191,9 +169,7 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <meta name="apple-mobile-web-app-capable" content="yes">
-            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-            <title>Subscriber Firewall - Phoenix Gen 20 Core</title>
+            <title>Subscriber Login - Phoenix Gen 20 Core</title>
             <style>
                 * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
                 body {{ background-color: #030508; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }}
@@ -212,7 +188,6 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                 <div class="brand-title">🔥 Phoenix Gen 20 Core</div>
                 <div class="subtitle">🔒 Firewall Gateway: Authentication Required</div>
 
-                <!-- Google OAuth Sign-In Button -->
                 <button class="btn-fire" style="background: #ffffff; color: #1f2937; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; border: 1px solid #d1d5db;" onclick="googleSignIn()">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.87z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.16 21.32 7.22 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.19C.43 8.14 0 9.87 0 11.75s.43 3.61 1.19 5.14l4.08-2.65z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.16 2.68 1.19 6.61l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
                     Sign In with Google
@@ -232,56 +207,34 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
 
             <script>
                 function googleSignIn() {{
-                    const mockEmail = "subscriber.gen20@gmail.com";
-                    fetch('/api/v1/auth/signin', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/json' }},
-                        body: JSON.stringify({{ email: mockEmail, password: "google_oauth_token" }})
-                    }})
-                    .then(res => res.json())
-                    .then(data => {{
-                        window.location.href = '/?user=' + encodeURIComponent(data.email);
-                    }});
+                    fetch('/api/v1/auth/signin', {{ method: 'POST', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ email: 'subscriber.gen20@gmail.com', password: 'oauth' }}) }})
+                    .then(res => res.json()).then(data => {{ window.location.href = '/?user=' + encodeURIComponent(data.email); }});
                 }}
-
                 function userLogin() {{
                     const email = document.getElementById('auth_email').value;
                     const pass = document.getElementById('auth_pass').value;
-                    if(!email || !pass) {{ alert('Enter email and password.'); return; }}
-                    fetch('/api/v1/auth/signin', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/json' }},
-                        body: JSON.stringify({{ email: email, password: pass }})
-                    }})
-                    .then(res => res.json())
-                    .then(data => {{
-                        window.location.href = '/?user=' + encodeURIComponent(data.email);
-                    }});
+                    if(!email || !pass) return alert('Enter credentials');
+                    fetch('/api/v1/auth/signin', {{ method: 'POST', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ email: email, password: pass }}) }})
+                    .then(res => res.json()).then(data => {{ window.location.href = '/?user=' + encodeURIComponent(data.email); }});
                 }}
-
                 function unlockAdmin() {{
                     const val = document.getElementById('admin_key').value;
-                    if(val === '{ADMIN_CHAT_ID}') {{
-                        window.location.href = '/?admin=' + val;
-                    }} else {{
-                        alert('Incorrect Owner Key.');
-                    }}
+                    if(val === '{ADMIN_CHAT_ID}') window.location.href = '/?admin=' + val;
+                    else alert('Incorrect Owner Key.');
                 }}
             </script>
         </body>
         </html>
         """
 
-    # Authenticated User Environment
+    # AUTHENTICATED DASHBOARD (ORIGINAL NEON FIRE APPEARANCE + 5-SEC AUTO LOGOUT TIMER)
     current_user_key = admin if is_admin else authenticated_user
     current_username = "Falcon (Apex Creator)" if is_admin else authenticated_user
-    
     user_data = user_sessions.get(current_user_key, {})
     user_auto_status = user_data.get("auto_trade_active", True if is_admin else False)
     user_tier = user_data.get("tier_level", "V1 Phoenix Novice")
     user_referrals = user_data.get("referrals", 0)
     user_ref_code = user_data.get("ref_code", generate_ref_code(current_user_key))
-
     base_url = str(request.base_url).rstrip("/")
     shareable_ref_link = f"{base_url}/?ref={user_ref_code}"
 
@@ -291,11 +244,7 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <title>Fonaurixis Phoenix Fire Bot v16.6.6 Gen 20 Core</title>
-        <!-- Lightweight Charts Library -->
-        <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
         <style>
             * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
             body {{ background-color: #05070c; color: #f8fafc; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }}
@@ -303,10 +252,8 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
             .top-header {{ position: sticky; top: 0; z-index: 100; background: rgba(10, 14, 26, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(249, 115, 22, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; }}
             .brand {{ font-size: 16px; font-weight: 900; background: linear-gradient(135deg, #ff416c, #f59e0b, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.5)); }}
             .top-actions {{ display: flex; align-items: center; gap: 12px; font-size: 13px; color: #cbd5e1; font-weight: 600; }}
-            .badge-count {{ background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 10px; position: relative; top: -6px; left: -8px; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }}
             
             .app-container {{ max-width: 480px; margin: 0 auto; padding: 14px; }}
-            
             .tab-page {{ display: none; }}
             .tab-page.active {{ display: block; animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }}
             @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(6px); }} to {{ opacity: 1; transform: translateY(0); }} }}
@@ -315,8 +262,6 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
             .card::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #f97316, #3b82f6, #ec4899, #10b981); opacity: 0.8; }}
             
             .btn-fire {{ background: linear-gradient(135deg, #f97316, #ef4444, #db2777); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; width: 100%; cursor: pointer; margin-top: 12px; text-align: center; display: block; text-decoration: none; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4); }}
-            .btn-fire:active {{ transform: scale(0.97); }}
-            
             .btn-dark {{ background: #1e293b; color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.1); padding: 13px; border-radius: 12px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; margin-top: 10px; }}
             
             .input-box, .select-box {{ width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #030508; color: white; font-size: 14px; outline: none; }}
@@ -337,8 +282,13 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
             .nav-link {{ color: #64748b; font-size: 10px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; cursor: pointer; width: 20%; }}
             .nav-link.active {{ color: #f97316; filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.6)); }}
             .nav-link span {{ font-size: 18px; }}
-            
-            #chart-container {{ width: 100%; height: 220px; border-radius: 12px; overflow: hidden; margin-top: 10px; border: 1px solid rgba(255,255,255,0.05); }}
+
+            .option-item {{ display: flex; justify-content: space-between; align-items: center; background: #0d1322; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; cursor: pointer; }}
+            .option-info {{ display: flex; align-items: center; gap: 12px; }}
+            .option-icon {{ font-size: 18px; color: #f97316; }}
+            .option-title {{ font-size: 13px; font-weight: 700; color: #fff; }}
+            .option-desc {{ font-size: 10px; color: #94a3b8; }}
+            .option-arrow {{ color: #64748b; font-weight: bold; }}
         </style>
     </head>
     <body>
@@ -375,15 +325,6 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                     </div>
                 </div>
 
-                <!-- Real-Time Dynamic Chart Widget -->
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 800; font-size: 14px;">📈 BTC/USD Live Chart</span>
-                        <span style="font-size: 11px; color: #4ade80; font-weight: bold;">LIVE FEED 🟢</span>
-                    </div>
-                    <div id="chart-container"></div>
-                </div>
-
                 <div class="icon-grid">
                     <div class="grid-card" onclick="switchTab('trade')"><span style="color:#38bdf8;">⚡</span>Signals</div>
                     <div class="grid-card" onclick="switchTab('market')"><span style="color:#4ade80;">📈</span>Earnings</div>
@@ -392,7 +333,7 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                     <div class="grid-card" onclick="switchTab('market')"><span style="color:#a855f7;">💼</span>Assets</div>
                     <div class="grid-card" onclick="switchTab('profile')"><span style="color:#ec4899;">👥</span>Invite</div>
                     <div class="grid-card" onclick="switchTab('profile')"><span style="color:#34d399;">🔗</span>API Bind</div>
-                    <div class="grid-card" onclick="switchTab('profile')"><span style="color:#60a5fa;">📌</span>Profile</div>
+                    <div class="grid-card" onclick="switchTab('more')"><span style="color:#60a5fa;">💬</span>More</div>
                 </div>
             </div>
 
@@ -401,11 +342,6 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                 <div class="card">
                     <h3 style="color: #38bdf8; margin-bottom: 6px;">⚡ Multi-Market Terminal</h3>
                     <p style="font-size: 12px; color: #94a3b8; margin-bottom: 14px;">Universal dynamic execution across Cryptocurrencies, Gold, Forex & Synthetics.</p>
-                    <div style="background: #030508; padding: 14px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2); font-size: 13px;">
-                        <p style="margin-bottom: 6px;">Base Safety Floor: <strong>0.01 Lot ($5 Account Protected)</strong></p>
-                        <p style="margin-bottom: 6px;">Compounding Scaling: <strong>Automatic Upward Tiering</strong></p>
-                        <p>Core Loop: <span style="color:#4ade80; font-weight:bold;">ACTIVE 🟢</span></p>
-                    </div>
                     <button class="btn-fire" onclick="alert('Gen 20 Core Trade Dispatched!')">Trigger Instant Trade</button>
                 </div>
             </div>
@@ -427,12 +363,10 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                     <h3 style="margin-bottom: 10px; color: #f8fafc;">📊 Live Tickers</h3>
                     <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;"><span>BTC/USD (Crypto)</span><span style="color:#4ade80; font-weight:bold;">+$92,850.00 (+3.8%)</span></div>
                     <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;"><span>XAU/USD (Gold)</span><span style="color:#4ade80; font-weight:bold;">+$2,895.20 (+1.1%)</span></div>
-                    <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;"><span>EUR/USD (Forex)</span><span style="color:#4ade80; font-weight:bold;">+$1.0850 (+0.1%)</span></div>
-                    <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;"><span>Volatility 100</span><span style="color:#4ade80; font-weight:bold;">+$5,920.00 (+2.6%)</span></div>
                 </div>
             </div>
 
-            <!-- TAB 5: PROFILE, REFERRAL ENGINE & API BINDING -->
+            <!-- TAB 5: PROFILE & REFERRALS -->
             <div id="tab-profile" class="tab-page">
                 <div class="card">
                     <div style="display: flex; align-items: center; gap: 14px;">
@@ -445,13 +379,12 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                     </div>
                 </div>
 
-                <!-- 🔥 UNIQUE SUBSCRIBER REFERRAL SYSTEM CARD 🔥 -->
                 <div class="card" style="border: 1px solid #ec4899; background: linear-gradient(145deg, #15091d, #080c16);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <span style="font-size: 14px; font-weight: 800; color: #f472b6;">🎁 Your Subscriber Referral Hub</span>
                         <span style="background: #831843; color: #fbcfe8; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px;">EARN V1-V5 RANKS</span>
                     </div>
-                    <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px;">Share your link on WhatsApp/Telegram. When new members join through your link, your rank advances automatically!</p>
+                    <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px;">Share your link on WhatsApp/Telegram to advance your rank automatically!</p>
                     
                     <label style="font-size: 11px; color: #94a3b8; font-weight: bold;">YOUR REFERRAL CODE:</label>
                     <input type="text" class="input-box" value="{user_ref_code}" readonly style="font-weight: 800; letter-spacing: 1px; color: #facc15; border-color: rgba(250, 204, 21, 0.3);">
@@ -484,6 +417,40 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                 </div>
             </div>
 
+            <!-- MORE OPTIONS TAB -->
+            <div id="tab-more" class="tab-page">
+                <h3 style="color: #f97316; margin-bottom: 14px;">💬 More Options</h3>
+                
+                <div class="option-item" onclick="alert('Official security updates & platform notices')">
+                    <div class="option-info"><div class="option-icon">📣</div><div><div class="option-title">Announcements</div><div class="option-desc">Official security updates & platform notices</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="alert('Manage trade alerts & push notifications')">
+                    <div class="option-info"><div class="option-icon">🔔</div><div><div class="option-title">Notifications</div><div class="option-desc">Manage trade alerts & push notifications</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="alert('Chronological log of all bot actions')">
+                    <div class="option-info"><div class="option-icon">📜</div><div><div class="option-title">Activity Log</div><div class="option-desc">Chronological log of all bot actions</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="alert('Exchange API health & connectivity: 100% OK')">
+                    <div class="option-info"><div class="option-icon">🟢</div><div><div class="option-title">Connection Status</div><div class="option-desc">Exchange API health & connectivity</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="alert('Sharpe ratio, drawdown & performance metrics')">
+                    <div class="option-info"><div class="option-icon">📈</div><div><div class="option-title">Bot Analytics</div><div class="option-desc">Sharpe ratio, drawdown & performance metrics</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="alert('Support: Telegram @8668083605')">
+                    <div class="option-info"><div class="option-icon">🎧</div><div><div class="option-title">Support</div><div class="option-desc">Get help or send feedback</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+                <div class="option-item" onclick="switchTab('new_trade')">
+                    <div class="option-info"><div class="option-icon">⚙️</div><div><div class="option-title">Settings</div><div class="option-desc">Bot control, markets & safety</div></div></div>
+                    <div class="option-arrow">›</div>
+                </div>
+            </div>
+
         </div>
 
         <div class="bottom-bar">
@@ -495,11 +462,32 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
         </div>
 
         <script>
+            let logoutTimer = null;
+
+            // 5-SECOND INACTIVITY / BACKGROUND LEAVE LOGOUT TIMER
+            document.addEventListener("visibilitychange", function() {{
+                if (document.hidden) {{
+                    logoutTimer = setTimeout(function() {{
+                        window.location.href = '/';
+                    }}, 5000);
+                }} else {{
+                    if (logoutTimer) {{
+                        clearTimeout(logoutTimer);
+                        logoutTimer = null;
+                    }}
+                }}
+            }});
+
             function switchTab(tabId) {{
                 document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                document.getElementById('tab-' + tabId).classList.add('active');
-                document.getElementById('nav-' + tabId).classList.add('active');
+                
+                const targetPage = document.getElementById('tab-' + tabId);
+                if(targetPage) targetPage.classList.add('active');
+                
+                const targetNav = document.getElementById('nav-' + tabId);
+                if(targetNav) targetNav.classList.add('active');
+                
                 window.scrollTo(0, 0);
             }}
 
@@ -510,7 +498,6 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
             function copyReferralLink() {{
                 const inviteInput = document.getElementById('user_invite_link');
                 inviteInput.select();
-                inviteInput.setSelectionRange(0, 99999);
                 navigator.clipboard.writeText(inviteInput.value);
                 alert('Referral Link Copied to Clipboard!');
             }}
@@ -523,7 +510,7 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                     body: JSON.stringify({{ user_id: userKey, auto_trade_active: isChecked }})
                 }})
                 .then(res => res.json())
-                .then(data => {{ alert(data.message); location.reload(); }});
+                .then(data => {{ alert(data.message); }});
             }}
 
             function bindMT5(userKey) {{
@@ -531,99 +518,60 @@ async def serve_pwa_dashboard(request: Request, admin: Optional[str] = None, use
                 const pass = document.getElementById('mt5_pass').value;
                 const server = document.getElementById('mt5_server').value;
                 const accType = document.getElementById('mt5_acc_type').value;
-                if(!acc || !pass || !server) {{ alert('Fill in all MT5 fields.'); return; }}
+                if(!acc || !pass || !server) return alert('Fill all MT5 fields.');
                 fetch('/api/v1/mt5/bind', {{
                     method: 'POST',
                     headers: {{ 'Content-Type': 'application/json' }},
                     body: JSON.stringify({{ user_id: userKey, account_id: acc, password: pass, server: server, account_type: accType }})
-                }})
-                .then(res => res.json())
-                .then(data => {{ alert(data.message); }});
+                }}).then(res => res.json()).then(data => alert(data.message));
             }}
 
             function submitPayment(method) {{
                 const txid = document.getElementById('airtel_txid').value;
-                const userKey = "{current_user_key}";
-                if(!txid) {{ alert('Paste your transaction reference ID.'); return; }}
+                if(!txid) return alert('Paste transaction ID.');
                 fetch('/api/v1/payments/submit', {{
                     method: 'POST',
                     headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ user_id: userKey, method: method, transaction_id: txid, amount: 110.0 }})
-                }})
-                .then(res => res.json())
-                .then(data => {{ alert('Payment submitted for verification.'); }});
+                    body: JSON.stringify({{ user_id: "{current_user_key}", method: method, transaction_id: txid, amount: 110.0 }})
+                }}).then(res => res.json()).then(data => alert('Deposit submitted.'));
             }}
-
-            // Render Dynamic Trading View Chart
-            window.onload = function() {{
-                const chartElement = document.getElementById('chart-container');
-                if (chartElement && typeof LightweightCharts !== 'undefined') {{
-                    const chart = LightweightCharts.createChart(chartElement, {{
-                        layout: {{ backgroundColor: '#030508', textColor: '#cbd5e1' }},
-                        grid: {{ vertLines: {{ color: 'rgba(255, 255, 255, 0.05)' }}, horzLines: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
-                        timeScale: {{ borderVisible: false }},
-                    }});
-                    const lineSeries = chart.addLineSeries({{ color: '#f97316', lineWidth: 2 }});
-                    lineSeries.setData([
-                        {{ time: '2026-10-20', value: 91200 }},
-                        {{ time: '2026-10-21', value: 91500 }},
-                        {{ time: '2026-10-22', value: 91100 }},
-                        {{ time: '2026-10-23', value: 92300 }},
-                        {{ time: '2026-10-24', value: 92850 }},
-                    ]);
-                }}
-            }};
         </script>
     </body>
     </html>
     """
 
-# API Endpoints
 @app.post("/api/v1/auth/signin")
 async def auth_signin(data: UserAuthData):
     if data.email not in user_sessions:
         user_sessions[data.email] = {
-            "email": data.email, 
-            "status": "active", 
-            "mt5_bound": False, 
-            "auto_trade_active": True, 
-            "simulated_balance": 5.0, 
-            "tier_level": "V1 Phoenix Novice", 
-            "referrals": 0,
-            "ref_code": generate_ref_code(data.email)
+            "email": data.email, "status": "active", "auto_trade_active": True,
+            "simulated_balance": 5.0, "ref_code": generate_ref_code(data.email)
         }
-    else:
-        user_sessions[data.email]["status"] = "active"
     return {"status": "success", "email": data.email}
 
 @app.post("/api/v1/bot/toggle")
 async def toggle_bot(data: BotSwitchData):
     if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"status": "active", "mt5_bound": False, "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
+        user_sessions[data.user_id] = {"status": "active", "ref_code": generate_ref_code(data.user_id)}
     user_sessions[data.user_id]["auto_trade_active"] = data.auto_trade_active
-    state_msg = "activated (Gen 20 Core Hybrid ON)" if data.auto_trade_active else "paused (Gen 20 Core OFF)"
-    return {"status": "success", "message": f"Phoenix Gen 20 Core Bot has been {state_msg}!"}
+    state_msg = "activated (Gen 20 Core Engine ON)" if data.auto_trade_active else "paused"
+    return {"status": "success", "message": f"Phoenix Bot has been {state_msg}!"}
 
 @app.post("/api/v1/mt5/bind")
 async def bind_mt5(data: MT5BindingData):
     encrypted_pw = encrypt_credential(data.password)
     if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"status": "active", "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
+        user_sessions[data.user_id] = {"status": "active", "ref_code": generate_ref_code(data.user_id)}
     user_sessions[data.user_id].update({
-        "account_id": data.account_id,
-        "password_hash": encrypted_pw,
-        "server": data.server,
-        "account_type": data.account_type,
-        "mt5_bound": True
+        "account_id": data.account_id, "password_hash": encrypted_pw,
+        "server": data.server, "account_type": data.account_type, "mt5_bound": True
     })
-    return {"status": "success", "message": f"MT5 {data.account_type} Account bound with Fernet encryption!"}
+    return {"status": "success", "message": f"MT5 {data.account_type} Bound with Fernet encryption!"}
 
 @app.post("/api/v1/payments/submit")
 async def submit_payment(data: PaymentSubmissionData):
-    if data.user_id not in user_sessions:
-        user_sessions[data.user_id] = {"mt5_bound": False, "simulated_balance": 5.0, "ref_code": generate_ref_code(data.user_id)}
-    user_sessions[data.user_id]["status"] = "active"
-    return {"status": "success", "message": "Payment recorded and sent for verification."}
+    return {"status": "success", "message": "Deposit recorded."}
+
 
 
 
